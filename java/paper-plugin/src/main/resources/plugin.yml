@@ -2,7 +2,7 @@ name: GenerativeEquipment
 version: 0.1.0
 main: dev.generative.equipment.paper.EquipmentPlugin
 api-version: '26.3'
-description: S0 scaffolding for generated equipment; runtime is not yet enabled.
+description: Generated equipment with a bounded QuickJS runtime and live definitions.
 commands:
   ge:
     description: Generated equipment entry point

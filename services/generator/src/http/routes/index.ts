@@ -8,8 +8,9 @@ import {
   type DeliveryEvent,
   type ObservationBatch,
 } from "@ge/protocol";
+import { DefinitionRepository } from "../../adapters/definitions.js";
 import type { Config } from "../../config.js";
-import { ApiFault, notImplemented } from "../../errors.js";
+import { ApiFault } from "../../errors.js";
 import { SqliteStore, taskView } from "../../adapters/sqlite-store.js";
 import { WorldCatalog } from "../../adapters/world-catalog.js";
 
@@ -20,20 +21,42 @@ export function registerRoutes(
     config,
     store,
     worlds,
-  }: { config: Config; store: SqliteStore; worlds: WorldCatalog },
+    definitions,
+    dependencies,
+    cancel,
+  }: {
+    config: Config;
+    store: SqliteStore;
+    worlds: WorldCatalog;
+    definitions: DefinitionRepository;
+    dependencies: Record<string, boolean>;
+    cancel: (id: string) => void;
+  },
 ): void {
-  app.get("/health/live", async () => ({ status: "alive", stage: "S0" }));
-  app.get("/v1/health/ready", async (_req, reply) =>
-    reply.code(503).send({
-      ready: false,
-      stage: "S0",
-      dependencies: {
-        database: true,
-        model: false,
-        validator: false,
-        publisher: false,
-      },
-    }),
+  app.get("/health/live", async () => ({ status: "alive", stage: "alpha" }));
+  app.get("/v1/health/ready", async (_req, reply) => {
+    const ready = Object.values(dependencies).every(Boolean);
+    return reply
+      .code(ready ? 200 : 503)
+      .send({ ready, stage: "alpha", dependencies });
+  });
+  app.get<{ Querystring: { recipientPlayerId?: string } }>(
+    "/v1/generations",
+    async (req) => {
+      const rows = store.db
+        .prepare(
+          "SELECT task_id,input_json FROM generation_tasks WHERE host_id=? ORDER BY created_at DESC LIMIT 100",
+        )
+        .all(config.hostId) as { task_id: string; input_json: string }[];
+      return rows
+        .filter(
+          (r) =>
+            !req.query.recipientPlayerId ||
+            JSON.parse(r.input_json).recipientPlayerId ===
+              req.query.recipientPlayerId,
+        )
+        .map((r) => taskView(store.get(r.task_id, config.hostId)!));
+    },
   );
   app.post<{ Params: { hostId: string } }>(
     "/v1/hosts/:hostId/capability-profiles",
@@ -116,7 +139,10 @@ export function registerRoutes(
     async (req) => {
       const row = store.get(req.params.taskId, config.hostId);
       if (!row) throw new ApiFault(404, "TASK_NOT_FOUND", "Task not found");
-      return taskView(row);
+      return {
+        ...taskView(row),
+        recipientPlayerId: JSON.parse(row.input_json).recipientPlayerId,
+      };
     },
   );
   // 取消这里只终止生成任务；材料退款与物品交付尚未接入，不隐式执行。
@@ -127,6 +153,7 @@ export function registerRoutes(
       const row = store.get(req.params.taskId, config.hostId);
       if (!row) throw new ApiFault(404, "TASK_NOT_FOUND", "Task not found");
       if (row.status === "CANCELLED") return taskView(row);
+      cancel(row.task_id);
       return taskView(
         store.transition(
           row.task_id,
@@ -139,13 +166,29 @@ export function registerRoutes(
     },
   );
   for (const suffix of ["", "/bundle", "/provenance"])
-    app.get(`/v1/definitions/:id/versions/:version${suffix}`, async () => {
-      throw new ApiFault(
-        404,
-        "DEFINITION_NOT_FOUND",
-        "No verified definitions are published in S0",
-      );
-    });
+    app.get<{ Params: { id: string; version: string } }>(
+      `/v1/definitions/:id/versions/:version${suffix}`,
+      async (req, reply) => {
+        const row = definitions.get(
+          req.params.id,
+          Number(req.params.version),
+          config.hostId,
+        );
+        if (!row)
+          throw new ApiFault(
+            404,
+            "DEFINITION_NOT_FOUND",
+            "Definition not found",
+          );
+        if (suffix === "/bundle")
+          return reply
+            .type("application/zip")
+            .send(await definitions.bundle(row));
+        return JSON.parse(
+          suffix === "/provenance" ? row.provenance_json : row.view_json,
+        );
+      },
+    );
   app.post<{ Params: { taskId: string } }>(
     "/v1/generations/:taskId/delivery-events",
     async (req) => {
@@ -158,14 +201,49 @@ export function registerRoutes(
         );
       if (body.taskId !== req.params.taskId)
         throw new ApiFault(422, "INVALID_REQUEST", "Task ids do not match");
-      throw notImplemented("Material and item delivery");
+      return definitions.delivery(body, config.hostId);
     },
   );
   app.post("/v1/observations/batch", async (req) => {
-    validate<ObservationBatch>("ObservationBatch", req.body);
-    throw notImplemented("Runtime observation persistence");
+    const batch = validate<ObservationBatch>("ObservationBatch", req.body);
+    const result: {
+      accepted: string[];
+      duplicate: string[];
+      invalid: string[];
+    } = { accepted: [], duplicate: [], invalid: [] };
+    for (const event of batch) {
+      try {
+        result[definitions.observe(event, config.hostId)].push(event.eventId);
+      } catch {
+        result.invalid.push(event.eventId);
+      }
+    }
+    return result;
   });
-  app.get("/v1/observations", async () => {
-    throw notImplemented("Runtime observation queries");
+  app.get<{
+    Querystring: {
+      definitionId: string;
+      version: string;
+      cursor?: string;
+      limit?: string;
+    };
+  }>("/v1/observations", async (req) => {
+    const q = req.query;
+    const limit = Math.max(1, Math.min(100, Number(q.limit) || 20)),
+      cursor = Math.max(0, Number(q.cursor) || 0);
+    if (!definitions.get(q.definitionId, Number(q.version), config.hostId))
+      throw new ApiFault(404, "DEFINITION_NOT_FOUND", "Definition not found");
+    const rows = store.db
+      .prepare(
+        "SELECT rowid AS cursor,event_json FROM observations WHERE host_id=? AND definition_id=? AND version=? AND rowid>? ORDER BY rowid LIMIT ?",
+      )
+      .all(config.hostId, q.definitionId, Number(q.version), cursor, limit) as {
+      cursor: number;
+      event_json: string;
+    }[];
+    return {
+      items: rows.map((r) => JSON.parse(r.event_json)),
+      nextCursor: rows.length === limit ? String(rows.at(-1)!.cursor) : null,
+    };
   });
 }

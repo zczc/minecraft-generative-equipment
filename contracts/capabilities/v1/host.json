@@ -1,0 +1,31 @@
+{
+  "buildId":"paper-alpha1",
+  "events":["item.activated","item.used","actor.move.sampled","combat.damage.prepare","timer.fired","operation.results"],
+  "queries":["actor.status","entity.nearby","view.raycast","world.block"],
+  "operations":["entity.velocity.add","combat.damage.set","entity.damage.request"],
+  "visuals":["particle","sound","text","display"],
+  "activationSlots":["main_hand"],
+  "limits":{"memoryBytes":8388608,"stateBytes":32768,"maxOperations":32,"maxQueries":16,"maxTimers":16,"maxActivities":16,"handlerBudgetMs":5,"tickBudgetMs":5,"radius":16,"pvp":false},
+  "api":{
+    "ctx.self":"{ref:'self',position:{worldId,x,y,z},health,sneaking,onGround,velocity:{x,y,z}}",
+    "ctx.query":"returns {ok,data,code}; refs returned by queries belong to this activation. No UUID strings as target.",
+    "actor.status":"args {target:'self' or issued ref}; data is entity snapshot",
+    "entity.nearby":"args {radius:0..16,limit:1..16}; data {entities:[snapshot]}; living entities only",
+    "view.raycast":"args {maxDistance:0..16}; data {entity:snapshot|null,position:worldPosition|null,block:string|null}",
+    "world.block":"args {position:worldPosition}; data {block:string}; loaded chunk within 16 blocks only",
+    "entity.velocity.add":"args {target:issuedRef,deltaVelocity:{x,y,z}}; vector length<=1.5 blocks/tick. APPLIED means velocity updated; PvP disabled by default.",
+    "combat.damage.set":"args {eventHandle:payload.eventHandle,healthPoints:0..20}; only combat.damage.prepare. PROPOSED does not prove final health loss.",
+    "entity.damage.request":"args {target:issuedRef,healthPoints:0..8}; non-player targets only by default. PROPOSED means normal Bukkit damage was requested; another plugin may cancel it.",
+    "item.used":"payload {action:'right_click',hand:'main_hand'}",
+    "actor.move.sampled":"payload {from:worldPosition,to:worldPosition}; sampled every 2 ticks while moved",
+    "combat.damage.prepare":"payload {eventHandle,target:issuedRef,healthPoints}; attacker equipment only",
+    "timer.fired":"payload {key,activityKey?,payload}; at least 1 tick delay",
+    "operation.results":"payload {receipts:[{receiptId,requestKey,capability,status,code,data,observedTick}]}; dependent costs and success feedback happen here",
+    "scenarios":"[{id,initialState,events:[RuleEvent],queries:{capability:QueryResult},expectedState?:object,expectedOperationCapabilities?:string[]}]",
+    "presentation":"cues use recipe {primitives:VisualPrimitive[]} or renderer:'render'. bindings match phase or capability/status by equality. render(ctx,frame) returns {primitives:[]}; world positions from frame.anchors.actor; arbitrary bounded geometry formula allowed.",
+    "particle":"{kind:'particle',key,particleKey,points:[worldPosition],countPerPoint}; allow minecraft:end_rod,minecraft:flame,minecraft:cloud,minecraft:happy_villager,minecraft:enchant; max128 expanded particles/call. options unsupported.",
+    "sound":"{kind:'sound',key,soundKey,position,pitch:0.5..2,volume:0..1}; allow minecraft:block.amethyst_block.chime,minecraft:entity.experience_orb.pickup,minecraft:block.beacon.activate,minecraft:entity.enderman.teleport; deduplicated key per cue",
+    "text":"{kind:'text',key,channel:'actionbar'|'floating',text,position?,ttlTicks:1..40}; max160 characters",
+    "display":"{kind:'display',key,resource:{kind:'item'|'block',id},position,scale:{x,y,z},rotation:{x,y,z,w},ttlTicks:1..40}; 4 entities/cue; scale<=2; unit quaternion"
+  }
+}

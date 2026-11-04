@@ -17,7 +17,7 @@
     "test:integration": "pnpm build:ts && node --import tsx --test tests/integration/*.test.ts",
     "test:java": "node scripts/java.mjs test",
     "test": "pnpm contracts:check && pnpm test:contracts && pnpm test:integration && pnpm test:java",
-    "dev:generator": "pnpm build:ts && node --env-file-if-exists=.env services/generator/dist/main.js",
+    "dev:generator": "pnpm build:ts && node --env-file-if-exists=.env scripts/generator.mjs",
     "dev:paper": "node --env-file-if-exists=.env scripts/paper.mjs",
     "check:design": "node scripts/check-design.mjs",
     "format:check": "prettier --check \"packages/*/src/*.ts\" \"services/generator/src/**/*.ts\" \"tests/**/*.ts\" \"scripts/*.mjs\""

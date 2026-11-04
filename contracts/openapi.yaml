@@ -31,7 +31,7 @@ paths:
       security: []
   /v1/health/ready:
     get:
-      summary: Dependency readiness; S0 returns 503
+      summary: Dependency readiness
       parameters: []
       responses:
         "200":
@@ -112,7 +112,7 @@ paths:
           description: Dependency unavailable
   /v1/generations:
     post:
-      summary: Persist a generation task; S0 worker fails with NOT_IMPLEMENTED
+      summary: Submit a generation task
       parameters:
         - name: Idempotency-Key
           in: header
@@ -144,6 +144,26 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/GenerationRequest"
+    get:
+      summary: List host tasks, optionally filtered by recipientPlayerId
+      parameters: []
+      responses:
+        "200":
+          description: Success or idempotent replay
+        "400":
+          description: Invalid request
+        "401":
+          description: Authentication required
+        "404":
+          description: Resource unavailable
+        "409":
+          description: State or idempotency conflict
+        "422":
+          description: Contract validation failed
+        "501":
+          description: Not implemented in S0
+        "503":
+          description: Dependency unavailable
   /v1/generations/{taskId}:
     get:
       summary: Get a generation task

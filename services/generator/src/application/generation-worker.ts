@@ -1,95 +1,169 @@
 import { SqliteStore } from "../adapters/sqlite-store.js";
-import type { ModelProvider, CandidateValidator } from "../ports/index.js";
-import { ApiFault, notImplemented } from "../errors.js";
-/**
- * 后台任务编排入口：只负责状态和依赖调用，模型与验证逻辑通过 port 注入。
- * 当前发布模块尚未实现，即使测试替身返回通过，也绝不产生 READY 或发放物品。
- */
+import { DefinitionRepository } from "../adapters/definitions.js";
+import type {
+  ModelProvider,
+  CandidateValidator,
+  GenerationInput,
+  ModelResult,
+  ValidationReport,
+} from "../ports/index.js";
+import { ApiFault } from "../errors.js";
+import { hashJson } from "@ge/protocol";
+/** 串行后台生成；每次验证失败才进行有上限的修复，取消信号同时传到 HTTP 和验证子进程。 */
 export class GenerationWorker {
-  private busy = false;
-  private controller = new AbortController();
   private pending: Promise<void> | null = null;
+  private stopping = false;
+  private active = new Map<string, AbortController>();
   constructor(
     private store: SqliteStore,
     private model: ModelProvider,
     private validator: CandidateValidator,
+    private definitions: DefinitionRepository,
   ) {}
-  /** 合并并发唤醒；同一个进程不能同时跑两轮任务扫描。 */
-  runOnce(): Promise<void> {
+  runOnce() {
     if (this.pending) return this.pending;
     this.pending = this.run().finally(() => {
       this.pending = null;
     });
     return this.pending;
   }
+  cancel(taskId: string) {
+    this.active.get(taskId)?.abort();
+  }
   private async run() {
-    if (this.busy || this.controller.signal.aborted) return;
-    this.busy = true;
-    try {
-      for (const row of this.store.queued()) {
-        if (this.controller.signal.aborted) break;
-        const active = this.store.transition(
+    for (const row of this.store.queued()) {
+      if (this.stopping) break;
+      const controller = new AbortController();
+      this.active.set(row.task_id, controller);
+      try {
+        this.store.transition(
           row.task_id,
           row.host_id,
           row.revision,
           "QUEUED",
           "GENERATING",
         );
-        try {
-          const candidate = await this.model.generate(
-            JSON.parse(row.resolved_json),
-            this.controller.signal,
+        const input = JSON.parse(row.resolved_json) as GenerationInput;
+        let result: ModelResult | null = null;
+        let diagnostics: string[] = [];
+        let previousHash: string | null = null;
+        for (
+          let attempt = 0;
+          attempt <= Math.min(2, input.policy.repairLimit);
+          attempt++
+        ) {
+          controller.signal.throwIfAborted();
+          result = await this.model.generate(
+            input,
+            controller.signal,
+            attempt
+              ? {
+                  ...(result?.source ? { source: result.source } : {}),
+                  ...(result?.rawText !== undefined
+                    ? { rawText: result.rawText }
+                    : {}),
+                  diagnostics,
+                }
+              : undefined,
           );
-          const current = this.store.get(row.task_id, row.host_id)!;
-          // 等待模型期间任务可能被取消；先复核状态，再进入验证。
-          if (current.status !== "GENERATING") continue;
-          const validating = this.store.transition(
+          let current = this.store.get(row.task_id, row.host_id)!;
+          if (["CANCELLED", "FAILED"].includes(current.status)) break;
+          current = this.store.transition(
             row.task_id,
             row.host_id,
             current.revision,
-            "GENERATING",
+            current.status,
             "VALIDATING",
           );
-          const report = await this.validator.validate(
-            candidate.source,
-            this.controller.signal,
+          const report: ValidationReport = result.source
+            ? await this.validator.validate(
+                result.source,
+                controller.signal,
+                input.capabilityProfile,
+              )
+            : {
+                passed: false,
+                sourceHash: hashJson({ rawText: result.rawText }),
+                engineBuildId: input.capabilityProfile.engineBuildId,
+                capabilityProfileId: input.capabilityProfile.profileId,
+                checks: [{ name: "module-output", status: "FAIL" }],
+                diagnostics: result.diagnostics ?? [
+                  "Model module could not be parsed",
+                ],
+              };
+          await this.definitions.saveCandidate(
+            row.task_id,
+            attempt,
+            result,
+            report,
           );
-          if (!report.passed)
+          this.definitions.attempt(row.task_id, attempt, result, report);
+          controller.signal.throwIfAborted();
+          current = this.store.get(row.task_id, row.host_id)!;
+          if (current.status !== "VALIDATING") break;
+          if (report.passed) {
+            await this.definitions.publish(current, input, result, report);
+            break;
+          }
+          diagnostics = report.diagnostics.slice(0, 8);
+          // 没有正文通常是思考耗尽输出预算；重复同一个请求不能修复不存在的程序。
+          if (!result.source && result.rawText?.trim() === "")
+            throw new ApiFault(
+              422,
+              "MODEL_OUTPUT_EMPTY",
+              "模型没有返回程序，请调整思考模式或输出预算",
+              diagnostics,
+            );
+          // 完全相同的失败候选再次出现时停止付费重试；仍保存本次真实用量和诊断。
+          if (previousHash === report.sourceHash)
+            throw new ApiFault(
+              422,
+              "REPAIR_UNCHANGED",
+              "模型重复返回相同的失败程序",
+              diagnostics,
+            );
+          previousHash = report.sourceHash;
+          if (attempt === Math.min(2, input.policy.repairLimit))
             throw new ApiFault(
               422,
               "VALIDATION_FAILED",
-              "Candidate failed validation",
+              "装备验证未通过",
+              diagnostics,
             );
-          void validating;
-          throw notImplemented("Publishing validated definitions");
-        } catch (e) {
-          const current = this.store.get(active.task_id, active.host_id);
-          if (
-            current &&
-            !["CANCELLED", "FAILED", "READY"].includes(current.status)
-          )
-            this.store.transition(
-              current.task_id,
-              current.host_id,
-              current.revision,
-              current.status,
-              "FAILED",
-              {
-                code: e instanceof ApiFault ? e.code : "GENERATION_FAILED",
-                message:
-                  e instanceof ApiFault
-                    ? e.message
-                    : "Generation did not complete.",
-              },
-            );
+          this.store.transition(
+            row.task_id,
+            row.host_id,
+            current.revision,
+            "VALIDATING",
+            "REPAIRING",
+          );
         }
+      } catch (e) {
+        const current = this.store.get(row.task_id, row.host_id);
+        if (
+          current &&
+          !["CANCELLED", "FAILED", "READY"].includes(current.status)
+        )
+          this.store.transition(
+            row.task_id,
+            row.host_id,
+            current.revision,
+            current.status,
+            "FAILED",
+            {
+              code: e instanceof ApiFault ? e.code : "GENERATION_FAILED",
+              message:
+                e instanceof ApiFault ? e.message : "生成或验证没有完成。",
+            },
+          );
+      } finally {
+        this.active.delete(row.task_id);
       }
-    } finally {
-      this.busy = false;
     }
   }
   async stop() {
-    this.controller.abort();
+    this.stopping = true;
+    for (const controller of this.active.values()) controller.abort();
     await this.pending;
   }
 }

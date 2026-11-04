@@ -139,7 +139,7 @@ test("generation submission protects intent, quantities, host identity and idemp
     await h.cleanup();
   }
 });
-test("worker fails honestly: no model calls or false READY in S0", async () => {
+test("worker without model credentials fails without false READY", async () => {
   const h = await harness();
   try {
     await register(h.app);
@@ -150,7 +150,7 @@ test("worker fails honestly: no model calls or false READY in S0", async () => {
       headers: auth,
     });
     assert.equal(result.json().status, "FAILED");
-    assert.equal(result.json().error.code, "NOT_IMPLEMENTED");
+    assert.equal(result.json().error.code, "MODEL_NOT_CONFIGURED");
     assert.equal(result.json().definitionRef, null);
     assert.equal(
       (

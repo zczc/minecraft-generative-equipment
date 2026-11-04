@@ -18,6 +18,7 @@ export type TaskRow = {
   revision: number;
   created_at: string;
   error_json: string | null;
+  definition_ref?: string | null;
 };
 /**
  * 仅供后台生成进程使用的 SQLite 仓储，不能放进 Paper 实时事件路径。
@@ -25,21 +26,51 @@ export type TaskRow = {
  */
 export class SqliteStore {
   readonly db: DatabaseSync;
+  private readonly ownership: DatabaseSync;
   constructor(dir: string) {
     mkdirSync(dir, { recursive: true });
-    this.db = new DatabaseSync(join(dir, "generator.sqlite"));
-    this.db.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;",
-    );
+    // 单独的 SQLite 写锁由操作系统随进程退出释放；防止第二个服务把正在生成的任务当成崩溃恢复。
+    this.ownership = new DatabaseSync(join(dir, "generator-owner.sqlite"));
+    try {
+      this.ownership.exec("PRAGMA busy_timeout=0; BEGIN IMMEDIATE;");
+    } catch {
+      this.ownership.close();
+      throw new Error(
+        "Generator data directory is already in use by another service",
+      );
+    }
+    try {
+      this.db = new DatabaseSync(join(dir, "generator.sqlite"));
+      this.db.exec(
+        "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;",
+      );
+      this.db.exec(
+        readFileSync(
+          new URL("../../migrations/001-initial.sql", import.meta.url),
+          "utf8",
+        ),
+      );
+      this.migratePublishing();
+    } catch (error) {
+      this.ownership.close();
+      throw error;
+    }
+  }
+  /** 已执行过的增量迁移保持幂等，保留旧 S0 任务记录。 */
+  private migratePublishing() {
     this.db.exec(
       readFileSync(
-        new URL("../../migrations/001-initial.sql", import.meta.url),
+        new URL("../../migrations/002-publishing.sql", import.meta.url),
         "utf8",
       ),
     );
   }
   close() {
-    this.db.close();
+    try {
+      this.db.close();
+    } finally {
+      this.ownership.close();
+    }
   }
   profile(id: string, hostId: string): CapabilityProfile | null {
     const row = this.db
@@ -76,7 +107,9 @@ export class SqliteStore {
   get(id: string, hostId: string): TaskRow | null {
     return (
       (this.db
-        .prepare("SELECT * FROM generation_tasks WHERE task_id=? AND host_id=?")
+        .prepare(
+          "SELECT t.*,d.ref_json AS definition_ref FROM generation_tasks t LEFT JOIN definitions d ON d.task_id=t.task_id WHERE t.task_id=? AND t.host_id=?",
+        )
         .get(id, hostId) as TaskRow | undefined) ?? null
     );
   }
@@ -151,7 +184,7 @@ export class SqliteStore {
       )
       .all() as TaskRow[];
   }
-  /** S0 不猜测模型调用是否成功；重启中断任务明确失败，避免重复计费或假完成。 */
+  /** 不猜测模型调用是否成功；重启中断任务明确失败，避免重复计费或假完成。 */
   recover() {
     this.db
       .prepare(
@@ -173,7 +206,7 @@ export function taskView(row: TaskRow): GenerationView {
     status: row.status,
     revision: row.revision,
     inputHash: row.input_hash,
-    definitionRef: null,
+    definitionRef: row.definition_ref ? JSON.parse(row.definition_ref) : null,
     error: row.error_json ? JSON.parse(row.error_json) : null,
     createdAt: row.created_at,
   };

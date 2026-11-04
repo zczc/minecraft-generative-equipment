@@ -5,5 +5,5 @@ gradle = "9.2.1"
 paper_api = "26.3.build.240-stable"
 paper_version = "26.3"
 paper_build = 240
-quickjs = "NOT_IMPLEMENTED_S0"
+quickjs = "2026-06-04-ge1"
 protocol = "1"

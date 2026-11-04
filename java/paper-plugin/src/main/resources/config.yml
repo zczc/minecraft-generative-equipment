@@ -3,10 +3,10 @@ generator:
   base-url: http://127.0.0.1:8765
   token-env: GE_INTERNAL_TOKEN
 runtime:
-  enabled: false
-  memory-bytes: 8388608
-  state-bytes: 32768
-  max-operations: 32
-  max-timers: 16
-  handler-target-ms: 1
-  tick-target-ms: 5
+  enabled: true
+  # 执行上限由 contracts/capabilities/v1/host.json 固定并公布，避免配置与实际权限不一致。
+
+world-rule-id: mist-isle
+generation:
+  # 首次试玩用测试额度；真实材料预留、扣除和退款在单独故障验收后开放。
+  test-credits: true

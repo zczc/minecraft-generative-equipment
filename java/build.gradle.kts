@@ -14,6 +14,7 @@ subprojects {
     }
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
         systemProperty("ge.repo", rootProject.projectDir.parentFile.absolutePath)
     }
     tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }

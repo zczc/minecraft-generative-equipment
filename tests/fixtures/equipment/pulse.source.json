@@ -1,0 +1,203 @@
+{
+  "equipment": {
+    "formatVersion": 1,
+    "name": "回声脉冲（手写测试装备）",
+    "description": "右键站稳蓄力，将附近生物推开。移动会中断；释放后恢复。",
+    "inputRelation": "这是运行器与宿主的 fixture，不是模型生成结果。",
+    "baseItem": "minecraft:blaze_rod",
+    "activationSlots": [
+      "main_hand"
+    ],
+    "stateSchema": {
+      "type": "object",
+      "properties": {
+        "cooldown": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "uses": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "cooldown",
+        "uses"
+      ],
+      "additionalProperties": false
+    },
+    "initialState": {
+      "cooldown": 0,
+      "uses": 0
+    },
+    "parameters": {
+      "chargeTicks": 12,
+      "cooldownTicks": 30,
+      "radius": 6,
+      "strength": 0.45
+    },
+    "subscriptions": [
+      "item.activated",
+      "item.used",
+      "actor.move.sampled",
+      "timer.fired",
+      "operation.results"
+    ],
+    "requires": {
+      "queries": [
+        "entity.nearby"
+      ],
+      "operations": [
+        "entity.velocity.add"
+      ]
+    },
+    "presentation": {
+      "cues": {
+        "charging": {
+          "category": "ongoing",
+          "audience": "nearby",
+          "durationTicks": 12,
+          "renderer": "render"
+        },
+        "release": {
+          "category": "result",
+          "audience": "nearby",
+          "durationTicks": 12,
+          "renderer": "render",
+          "requiredReceiptStatus": [
+            "APPLIED"
+          ]
+        },
+        "blocked": {
+          "category": "failure",
+          "audience": "actor",
+          "durationTicks": 20,
+          "recipe": {
+            "primitives": [
+              {
+                "kind": "text",
+                "key": "reason",
+                "channel": "actionbar",
+                "text": "没有目标、尚未恢复或移动打断了蓄力",
+                "ttlTicks": 20
+              }
+            ]
+          }
+        }
+      },
+      "bindings": [
+        {
+          "cueId": "charging",
+          "trigger": "activity.phase",
+          "match": {
+            "phase": "charging"
+          }
+        }
+      ]
+    },
+    "scenarios": [
+      {
+        "id": "cooldown",
+        "initialState": {
+          "cooldown": 1,
+          "uses": 0
+        },
+        "events": [
+          {
+            "eventId": "s1",
+            "kind": "item.used",
+            "tick": 0,
+            "phase": "internal",
+            "payload": {}
+          }
+        ],
+        "queries": {},
+        "expectedState": {
+          "cooldown": 1,
+          "uses": 0
+        },
+        "expectedOperationCapabilities": []
+      },
+      {
+        "id": "charge",
+        "initialState": {
+          "cooldown": 0,
+          "uses": 0
+        },
+        "events": [
+          {
+            "eventId": "s2",
+            "kind": "item.used",
+            "tick": 0,
+            "phase": "internal",
+            "payload": {}
+          }
+        ],
+        "queries": {},
+        "expectedState": {
+          "cooldown": 0,
+          "uses": 0
+        },
+        "expectedOperationCapabilities": []
+      },
+      {
+        "id": "release",
+        "initialState": {
+          "cooldown": 0,
+          "uses": 0
+        },
+        "events": [
+          {
+            "eventId": "start",
+            "kind": "item.activated",
+            "tick": 0,
+            "phase": "internal",
+            "payload": {}
+          },
+          {
+            "eventId": "use",
+            "kind": "item.used",
+            "tick": 1,
+            "phase": "observed",
+            "payload": {
+              "action": "right_click",
+              "hand": "main_hand"
+            }
+          },
+          {
+            "eventId": "wait",
+            "kind": "test.advance",
+            "tick": 13,
+            "phase": "internal",
+            "payload": {}
+          }
+        ],
+        "queries": {
+          "entity.nearby": {
+            "ok": true,
+            "data": {
+              "entities": [
+                {
+                  "ref": "target-1",
+                  "position": {
+                    "worldId": "test-world",
+                    "x": 2,
+                    "y": 64,
+                    "z": 0
+                  }
+                }
+              ]
+            },
+            "code": null
+          }
+        },
+        "expectedOperationCapabilities": [
+          "entity.velocity.add"
+        ]
+      }
+    ]
+  },
+  "behaviorSource": "import {lerp} from '@ge/sdk';\nexport function onEvent(c,e) {\n  const s=c.state,p=c.parameters;\n  if(e.kind==='item.activated')return {timers:[{action:'set',key:'clock',afterTicks:1,payload:{}}]};\n  if(e.kind==='timer.fired'&&e.payload.key==='clock')return {nextState:{...s,cooldown:Math.max(0,s.cooldown-1)},timers:[{action:'set',key:'clock',afterTicks:1,payload:{}}]};\n  if(e.kind==='item.used') {\n    if(s.cooldown>0||c.activities.length)return {feedback:[{cueId:'blocked'}]};\n    return {activities:[{action:'begin',key:'pulse',phase:'charging',data:{}}],timers:[{action:'set',key:'release',activityKey:'pulse',afterTicks:p.chargeTicks,payload:{}}]};\n  }\n  if(e.kind==='actor.move.sampled'&&c.activities.length) {\n    const a=e.payload.from,b=e.payload.to;\n    if(Math.hypot(a.x-b.x,a.z-b.z)>.25)return {activities:[{action:'end',key:'pulse',reason:'moved'}],feedback:[{cueId:'blocked'}]};\n  }\n  if(e.kind==='timer.fired'&&e.payload.key==='release') {\n    const q=c.query('entity.nearby',{radius:p.radius,limit:8});\n    if(!q.ok||q.data.entities.length===0)return {activities:[{action:'end',key:'pulse',reason:'no target'}],feedback:[{cueId:'blocked'}]};\n    const a=c.self.position;\n    return {activities:[{action:'update',key:'pulse',phase:'releasing'}],operations:q.data.entities.map((t,i)=>{let x=t.position.x-a.x,z=t.position.z-a.z,d=Math.hypot(x,z)||1;return {key:'push'+i,capability:'entity.velocity.add',activityKey:'pulse',args:{target:t.ref,deltaVelocity:{x:x/d*p.strength,y:.15,z:z/d*p.strength}}}})};\n  }\n  if(e.kind==='operation.results') {\n    const ok=e.payload.receipts.filter(r=>r.status==='APPLIED');\n    return {nextState:{cooldown:p.cooldownTicks,uses:s.uses+(ok.length?1:0)},activities:[{action:'end',key:'pulse',reason:'complete'}],feedback:ok.length?[{cueId:'release',receiptIds:ok.map(r=>r.receiptId)}]:[{cueId:'blocked'}]};\n  }\n  return {};\n}\nexport function render(c,f) {\n  const a=f.anchors.actor,points=[],release=f.cueId==='release';\n  for(let i=0;i<24;i++){const t=i/24*Math.PI*2+f.elapsedTicks*.15,r=release?Math.min(c.parameters.radius,.3+f.elapsedTicks*.25):lerp(2,.5,Math.min(1,f.elapsedTicks/c.parameters.chargeTicks));points.push({worldId:a.worldId,x:a.x+Math.cos(t)*r,y:a.y+.2+Math.sin(t*3+f.elapsedTicks*.3)*.15,z:a.z+Math.sin(t)*r})}\n  return {primitives:[{kind:'particle',key:'ring',particleKey:'minecraft:end_rod',points,countPerPoint:1},{kind:'text',key:'stage',channel:'actionbar',text:release?'脉冲已施加':'站稳，正在蓄力',ttlTicks:2}]};\n}\n"
+}

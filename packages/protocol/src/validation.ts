@@ -59,7 +59,14 @@ export function validate<T>(name: string, value: unknown): T {
     throw new ContractError(
       (check.errors ?? []).map((e) => ({
         path: e.instancePath || "/",
-        message: e.message ?? "Invalid value",
+        message:
+          (e.message ?? "Invalid value") +
+          (e.params.additionalProperty
+            ? ` (${e.params.additionalProperty})`
+            : "") +
+          (e.params.allowedValues
+            ? `; allowed=${JSON.stringify(e.params.allowedValues)}`
+            : ""),
       })),
     );
   return value as T;

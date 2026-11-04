@@ -1,26 +1,56 @@
 package dev.generative.equipment.paper;
-import org.bukkit.plugin.java.JavaPlugin;
-import dev.generative.equipment.runtime.QuickJsRuntime;
-import dev.generative.equipment.core.ActivationRegistry;
+
 import dev.generative.equipment.paper.commands.EquipmentCommand;
-import dev.generative.equipment.paper.listeners.InventoryLifecycleListener;
+import dev.generative.equipment.paper.ui.GenerationScreen;
+import dev.generative.equipment.protocol.JsonContracts;
+import dev.generative.equipment.runtime.QuickJsRuntime;
 import java.util.Objects;
-/** Paper 生命周期入口，只组装插件；S0 没有注册任何可执行装备规则。 */
+import org.bukkit.plugin.java.JavaPlugin;
+
+/** 插件入口：启动时准备可信运行器与缓存；新定义注册不调用插件 reload，也不重启服务器。 */
 public final class EquipmentPlugin extends JavaPlugin {
-    private QuickJsRuntime runtime;
-    private final ActivationRegistry activations = new ActivationRegistry();
-    @Override public void onEnable() {
-        saveDefaultConfig(); runtime = new QuickJsRuntime();
-        var executor = new EquipmentCommand(this);
-        var command = Objects.requireNonNull(getCommand("ge"));
-        command.setExecutor(executor); command.setTabCompleter(executor);
-        getServer().getPluginManager().registerEvents(new InventoryLifecycleListener(activations), this);
-        getLogger().info("GenerativeEquipment S0 loaded. No rules or model generation are active.");
+  private QuickJsRuntime runtime;
+  private PaperRuntimeController host;
+  private GameService game;
+
+  @Override
+  public void onEnable() {
+    saveDefaultConfig();
+    try {
+      JsonContracts.prewarm();
+      runtime = new QuickJsRuntime();
+      host = new PaperRuntimeController(this, runtime);
+      game = new GameService(this, host, runtime);
+      var screen = new GenerationScreen(this, game, host);
+      var command = new EquipmentCommand(this, host, game, screen);
+      var entry = Objects.requireNonNull(getCommand("ge"));
+      entry.setExecutor(command);
+      entry.setTabCompleter(command);
+      getServer().getPluginManager().registerEvents(host, this);
+      getServer().getPluginManager().registerEvents(screen, this);
+      getServer().getScheduler().runTaskTimer(this, host::advance, 1, 1);
+      game.start();
+      getLogger()
+          .info(
+              "GenerativeEquipment alpha loaded. QuickJS enabled when runtime.enabled=true; new"
+                  + " generation uses test credits.");
+    } catch (Exception | LinkageError e) {
+      getLogger()
+          .severe(
+              "GenerativeEquipment startup failed: "
+                  + e.getClass().getSimpleName()
+                  + ": "
+                  + e.getMessage());
+      getServer().getPluginManager().disablePlugin(this);
     }
-    /** 先停止调度和激活，再释放运行器；这里没有已创建的持续游戏效果。 */
-    @Override public void onDisable() {
-        getServer().getScheduler().cancelTasks(this);
-        activations.stopAll(lease -> {});
-        if (runtime != null) runtime.close();
-    }
+  }
+
+  /** 先撤销活动和主线程任务，再结束后台编排，最后关闭运行器。 */
+  @Override
+  public void onDisable() {
+    if (host != null) host.close();
+    getServer().getScheduler().cancelTasks(this);
+    if (game != null) game.close();
+    if (runtime != null) runtime.close();
+  }
 }

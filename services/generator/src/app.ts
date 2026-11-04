@@ -2,18 +2,17 @@ import { registerRoutes } from "./http/routes/index.js";
 import Fastify from "fastify";
 import { timingSafeEqual } from "node:crypto";
 import { ContractError } from "@ge/protocol";
-import type { Config } from "./config.js";
+import { generationConfig, type Config } from "./config.js";
 import { ApiFault } from "./errors.js";
 import { SqliteStore } from "./adapters/sqlite-store.js";
 import { WorldCatalog } from "./adapters/world-catalog.js";
-import {
-  AliyunModelProvider,
-  ValidatorProcess,
-} from "./adapters/unimplemented.js";
+import { AliyunModelProvider } from "./adapters/aliyun/model.js";
+import { ValidatorProcess } from "./adapters/validator-process.js";
+import { DefinitionRepository } from "./adapters/definitions.js";
 import { GenerationWorker } from "./application/generation-worker.js";
 /**
  * 生成服务组装入口。HTTP 只处理后台任务，不直接操作 Minecraft 世界。
- * S0 的任务可入库，但 worker 会明确报告未实现；ready 接口不会把此状态说成可用。
+ * 真正验证通过后才发布；密钥或运行器缺失时 ready 明确报告不可用。
  */
 export async function createApp(config: Config, { startWorker = true } = {}) {
   const app = Fastify({
@@ -23,10 +22,20 @@ export async function createApp(config: Config, { startWorker = true } = {}) {
   const store = new SqliteStore(config.dataDir),
     worlds = new WorldCatalog(config.worldsDir);
   store.recover();
+  const generation = config.generation ?? generationConfig({});
+  const validator = new ValidatorProcess(generation);
+  const definitions = new DefinitionRepository(store, config.dataDir);
+  const dependencies = {
+    database: true,
+    model: !!generation.apiKey,
+    validator: await validator.available(),
+    publisher: true,
+  };
   const worker = new GenerationWorker(
     store,
-    new AliyunModelProvider(),
-    new ValidatorProcess(),
+    new AliyunModelProvider(generation),
+    validator,
+    definitions,
   );
   // 凭证绑定到配置的 hostId；请求正文不能借换一个 hostId 越权。
   app.addHook("preHandler", async (request) => {
@@ -96,7 +105,14 @@ export async function createApp(config: Config, { startWorker = true } = {}) {
       },
     }),
   );
-  registerRoutes(app, { config, store, worlds });
+  registerRoutes(app, {
+    config,
+    store,
+    worlds,
+    definitions,
+    dependencies,
+    cancel: (id) => worker.cancel(id),
+  });
   const timer = startWorker
     ? setInterval(() => {
         void worker
@@ -110,5 +126,5 @@ export async function createApp(config: Config, { startWorker = true } = {}) {
     await worker.stop();
     store.close();
   });
-  return { app, store, worker, worlds };
+  return { app, store, worker, worlds, definitions };
 }

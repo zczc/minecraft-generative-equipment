@@ -84,12 +84,21 @@ if (
 )
   await writeFile(
     properties,
-    "server-ip=127.0.0.1\nserver-port=25565\nonline-mode=true\nmotd=Generative Equipment S0\n",
+    "server-ip=127.0.0.1\nserver-port=25565\nonline-mode=true\nmotd=Generative Equipment Alpha\n",
   );
 const home = await javaHome();
 const child = spawn(
   home ? join(home, "bin/java") : "java",
-  ["-Xms512M", "-Xmx2G", "-jar", jar, "--nogui"],
+  [
+    "--enable-native-access=ALL-UNNAMED",
+    "-Dterminal.jline=false",
+    "-Dterminal.ansi=false",
+    "-Xms512M",
+    "-Xmx2G",
+    "-jar",
+    jar,
+    "--nogui",
+  ],
   { cwd: dir, stdio: "inherit", env: process.env },
 );
 child.on("error", (error) => {

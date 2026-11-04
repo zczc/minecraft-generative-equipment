@@ -9,7 +9,7 @@
     "method": "get",
     "path": "/v1/health/ready",
     "body": null,
-    "summary": "Dependency readiness; S0 returns 503"
+    "summary": "Dependency readiness"
   },
   {
     "method": "post",
@@ -27,7 +27,7 @@
     "method": "post",
     "path": "/v1/generations",
     "body": "GenerationRequest",
-    "summary": "Persist a generation task; S0 worker fails with NOT_IMPLEMENTED"
+    "summary": "Submit a generation task"
   },
   {
     "method": "get",
@@ -76,5 +76,11 @@
     "path": "/v1/observations",
     "body": null,
     "summary": "Query observations; S0 returns NOT_IMPLEMENTED"
+  },
+  {
+    "method": "get",
+    "path": "/v1/generations",
+    "body": null,
+    "summary": "List host tasks, optionally filtered by recipientPlayerId"
   }
 ]

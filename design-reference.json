@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "designVersion": "v0.1",
+  "designVersion": "v0.2",
   "status": "review",
   "date": "2026-11-04",
   "documents": [
     {
-      "path": "../discussion/outputs/v0.1/game-design.md",
-      "sha256": "ec6f212e3e410cf7b7461ebd940e7c1c4036a927609e222c3c75a06dde3c5850"
+      "path": "../discussion/outputs/v0.2/game-design.md",
+      "sha256": "660dca955eec52b353692c25e498eaefda2881a0ceeb44d1b798e7c97a1168a1"
     },
     {
-      "path": "../discussion/outputs/v0.1/implementation-design.md",
-      "sha256": "182064f0fc1729fbaccea8500b4e3faf27992e2b42f4aa93bc1ad6f071c8fb1d"
+      "path": "../discussion/outputs/v0.2/implementation-design.md",
+      "sha256": "37ba7dbc42d3192af261b4d74dccf12bb9a8e13dd3b0e6ebe117dafadb90d686"
     }
   ]
 }
