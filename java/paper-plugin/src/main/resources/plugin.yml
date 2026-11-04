@@ -1,0 +1,18 @@
+name: GenerativeEquipment
+version: 0.1.0
+main: dev.generative.equipment.paper.EquipmentPlugin
+api-version: '26.3'
+description: S0 scaffolding for generated equipment; runtime is not yet enabled.
+commands:
+  ge:
+    description: Generated equipment entry point
+    usage: /ge
+    permission: ge.use
+permissions:
+  ge.use:
+    default: true
+  ge.admin:
+    default: op
+libraries:
+  - com.fasterxml.jackson.core:jackson-databind:2.19.2
+  - com.networknt:json-schema-validator:1.5.9

@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "MaterialInput": {
+      "type": "object",
+      "properties": {
+        "definitionId": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        }
+      },
+      "required": [
+        "definitionId",
+        "count"
+      ],
+      "additionalProperties": false
+    },
+    "SourceEquipment": {
+      "type": "object",
+      "properties": {
+        "definitionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bundleHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "state": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "definitionId",
+        "version",
+        "bundleHash",
+        "state"
+      ],
+      "additionalProperties": false
+    },
+    "GenerationRequest": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "taskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "hostId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "recipientPlayerId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "worldRuleRef": {
+          "$ref": "#/$defs/WorldRef"
+        },
+        "capabilityProfileId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "intentText": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MaterialInput"
+          },
+          "maxItems": 8
+        },
+        "sourceEquipment": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SourceEquipment"
+          },
+          "maxItems": 4
+        },
+        "generationContext": {
+          "$ref": "#/$defs/GenerationContext"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "taskId",
+        "hostId",
+        "recipientPlayerId",
+        "worldRuleRef",
+        "capabilityProfileId",
+        "intentText",
+        "materials",
+        "sourceEquipment",
+        "generationContext"
+      ],
+      "additionalProperties": false
+    },
+    "GenerationView": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "taskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "QUEUED",
+            "GENERATING",
+            "VALIDATING",
+            "REPAIRING",
+            "READY",
+            "FAILED",
+            "CANCELLED"
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "inputHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "definitionRef": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DefinitionRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "taskId",
+        "status",
+        "revision",
+        "inputHash",
+        "definitionRef",
+        "error",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    },
+    "CancelRequest": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "requestId",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "DeliveryEvent": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "deliveryId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "hostId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "taskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "sequenceNo": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "NOT_STARTED",
+            "WAITING_PLAYER",
+            "PREPARED",
+            "APPLIED",
+            "ACKNOWLEDGED",
+            "RECOVERY_REQUIRED",
+            "REFUNDED"
+          ]
+        },
+        "evidence": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "eventId",
+        "deliveryId",
+        "hostId",
+        "taskId",
+        "sequenceNo",
+        "state",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "Observation": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "definitionRef": {
+          "$ref": "#/$defs/DefinitionRef"
+        },
+        "codeHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "activationId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "activityId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "payload": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "eventId",
+        "definitionRef",
+        "codeHash",
+        "activationId",
+        "activityId",
+        "kind",
+        "payload",
+        "observedAt"
+      ],
+      "additionalProperties": false
+    },
+    "ObservationBatch": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Observation"
+      },
+      "maxItems": 100
+    }
+  }
+}

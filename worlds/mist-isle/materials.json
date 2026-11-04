@@ -1,0 +1,93 @@
+{
+  "version": "1",
+  "materials": [
+    {
+      "itemId": "minecraft:iron_ingot",
+      "enabled": true,
+      "name": "铁锭",
+      "gameFacts": "用于合成工具、盔甲等物品。",
+      "associations": [
+        "重量",
+        "承受",
+        "结构"
+      ]
+    },
+    {
+      "itemId": "minecraft:redstone",
+      "enabled": true,
+      "name": "红石粉",
+      "gameFacts": "可铺设红石线路，传递红石信号。",
+      "associations": [
+        "信号",
+        "触发",
+        "连接"
+      ]
+    },
+    {
+      "itemId": "minecraft:amethyst_shard",
+      "enabled": true,
+      "name": "紫水晶碎片",
+      "gameFacts": "晶体碎片，可用于合成望远镜。",
+      "associations": [
+        "共振",
+        "节奏",
+        "重复"
+      ]
+    },
+    {
+      "itemId": "minecraft:slime_ball",
+      "enabled": true,
+      "name": "黏液球",
+      "gameFacts": "可用于合成黏液块与黏性活塞。",
+      "associations": [
+        "黏附",
+        "弹性",
+        "聚合"
+      ]
+    },
+    {
+      "itemId": "minecraft:feather",
+      "enabled": true,
+      "name": "羽毛",
+      "gameFacts": "可用于合成箭与书和笔。",
+      "associations": [
+        "轻盈",
+        "滑翔",
+        "方向"
+      ]
+    },
+    {
+      "itemId": "minecraft:blaze_powder",
+      "enabled": true,
+      "name": "烈焰粉",
+      "gameFacts": "用于酿造台燃料及部分合成。",
+      "associations": [
+        "热量",
+        "燃烧",
+        "释放"
+      ]
+    },
+    {
+      "itemId": "minecraft:ender_pearl",
+      "enabled": true,
+      "name": "末影珍珠",
+      "gameFacts": "原版中可投掷并传送使用者。",
+      "associations": [
+        "距离",
+        "空间",
+        "转移"
+      ]
+    },
+    {
+      "itemId": "minecraft:echo_shard",
+      "enabled": true,
+      "name": "回响碎片",
+      "gameFacts": "可用于合成追溯指针。",
+      "associations": [
+        "回声",
+        "记忆",
+        "重现"
+      ]
+    }
+  ]
+}

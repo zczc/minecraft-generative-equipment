@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "WorldConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "materialsFile": {
+          "const": "materials.json"
+        },
+        "policyFile": {
+          "const": "generation-policy.json"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "name",
+        "description",
+        "materialsFile",
+        "policyFile"
+      ],
+      "additionalProperties": false
+    },
+    "MaterialDefinition": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "gameFacts": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "associations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "maxItems": 12
+        }
+      },
+      "required": [
+        "itemId",
+        "enabled",
+        "name",
+        "gameFacts",
+        "associations"
+      ],
+      "additionalProperties": false
+    },
+    "MaterialCatalog": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MaterialDefinition"
+          },
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "version",
+        "materials"
+      ],
+      "additionalProperties": false
+    },
+    "GenerationPolicy": {
+      "type": "object",
+      "properties": {
+        "intentLimit": {
+          "const": 10
+        },
+        "maxIntentBytes": {
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 4096
+        },
+        "maxMaterialKinds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "maxCountPerMaterial": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "associationsAreSuggestions": {
+          "const": true
+        },
+        "repairLimit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        }
+      },
+      "required": [
+        "intentLimit",
+        "maxIntentBytes",
+        "maxMaterialKinds",
+        "maxCountPerMaterial",
+        "associationsAreSuggestions",
+        "repairLimit"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

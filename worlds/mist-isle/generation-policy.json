@@ -1,0 +1,8 @@
+{
+  "intentLimit": 10,
+  "maxIntentBytes": 256,
+  "maxMaterialKinds": 8,
+  "maxCountPerMaterial": 64,
+  "associationsAreSuggestions": true,
+  "repairLimit": 2
+}

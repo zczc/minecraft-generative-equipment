@@ -1,0 +1,687 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "RuleEvent": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "kind": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "phase": {
+          "type": "string",
+          "enum": [
+            "prepare",
+            "observed",
+            "internal"
+          ]
+        },
+        "payload": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "eventId",
+        "kind",
+        "tick",
+        "phase",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "OperationRequest": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "capability": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "args": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "activityKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        }
+      },
+      "required": [
+        "key",
+        "capability",
+        "args"
+      ],
+      "additionalProperties": false
+    },
+    "OperationReceipt": {
+      "type": "object",
+      "properties": {
+        "receiptId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "requestKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "capability": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PROPOSED",
+            "APPLIED",
+            "REJECTED",
+            "ERROR"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "data": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "observedTick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "receiptId",
+        "requestKey",
+        "capability",
+        "status",
+        "code",
+        "data",
+        "observedTick"
+      ],
+      "additionalProperties": false
+    },
+    "ActivityChange": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "begin"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "phase": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "data": {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "action",
+            "key",
+            "phase",
+            "data"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "update"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "phase": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "data": {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "action",
+            "key"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "end"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          "required": [
+            "action",
+            "key",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TimerCommand": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "set"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "afterTicks": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "activityKey": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "payload": {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "action",
+            "key",
+            "afterTicks",
+            "payload"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "cancel"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            }
+          },
+          "required": [
+            "action",
+            "key"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "FeedbackSignal": {
+      "type": "object",
+      "properties": {
+        "cueId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "activityKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "data": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "receiptIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "cueId"
+      ],
+      "additionalProperties": false
+    },
+    "Decision": {
+      "type": "object",
+      "properties": {
+        "nextState": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ActivityChange"
+          },
+          "maxItems": 32
+        },
+        "timers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TimerCommand"
+          },
+          "maxItems": 16
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperationRequest"
+          },
+          "maxItems": 32
+        },
+        "feedback": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FeedbackSignal"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "ActivitySnapshot": {
+      "type": "object",
+      "properties": {
+        "activityId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "phase": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "elapsedTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "phaseElapsedTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true,
+          "maxProperties": 128
+        }
+      },
+      "required": [
+        "activityId",
+        "key",
+        "phase",
+        "elapsedTicks",
+        "phaseElapsedTicks",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "RenderFrame": {
+      "type": "object",
+      "properties": {
+        "cueId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "activity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ActivitySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "elapsedTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "progress": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "anchors": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "$ref": "#/$defs/WorldPosition"
+          }
+        },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperationReceipt"
+          },
+          "maxItems": 32
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true,
+          "maxProperties": 128
+        }
+      },
+      "required": [
+        "cueId",
+        "activity",
+        "elapsedTicks",
+        "progress",
+        "anchors",
+        "receipts",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "VisualPrimitive": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "particle"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "particleKey": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/WorldPosition"
+              },
+              "maxItems": 256
+            },
+            "countPerPoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "options": {
+              "type": "object",
+              "additionalProperties": true,
+              "maxProperties": 128
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "particleKey",
+            "points",
+            "countPerPoint"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "sound"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "soundKey": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "position": {
+              "$ref": "#/$defs/WorldPosition"
+            },
+            "pitch": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "volume": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 4
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "soundKey",
+            "position",
+            "pitch",
+            "volume"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "display"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "resource": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "item",
+                    "block"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "position": {
+              "$ref": "#/$defs/WorldPosition"
+            },
+            "scale": {
+              "$ref": "#/$defs/Vec3"
+            },
+            "rotation": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "z": {
+                  "type": "number"
+                },
+                "w": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "z",
+                "w"
+              ],
+              "additionalProperties": false
+            },
+            "ttlTicks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1200
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "resource",
+            "position",
+            "scale",
+            "rotation",
+            "ttlTicks"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "channel": {
+              "const": "actionbar"
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "ttlTicks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1200
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "channel",
+            "text",
+            "ttlTicks"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "channel": {
+              "const": "floating"
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "position": {
+              "$ref": "#/$defs/WorldPosition"
+            },
+            "ttlTicks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1200
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "channel",
+            "text",
+            "position",
+            "ttlTicks"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "VisualFrame": {
+      "type": "object",
+      "properties": {
+        "primitives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VisualPrimitive"
+          },
+          "maxItems": 256
+        }
+      },
+      "required": [
+        "primitives"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

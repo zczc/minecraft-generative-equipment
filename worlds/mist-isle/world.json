@@ -1,0 +1,8 @@
+{
+  "id": "mist-isle",
+  "version": "1",
+  "name": "雾岛",
+  "description": "探索材料组合带来的新规则。",
+  "materialsFile": "materials.json",
+  "policyFile": "generation-policy.json"
+}

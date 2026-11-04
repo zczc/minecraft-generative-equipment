@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-test",
+  "hostId": "local-paper",
+  "recipientPlayerId": "player-test",
+  "worldRuleRef": {
+    "id": "mist-isle",
+    "version": "1"
+  },
+  "capabilityProfileId": "profile-test",
+  "intentText": "借 echo 的力量",
+  "materials": [
+    {
+      "definitionId": "minecraft:amethyst_shard",
+      "count": 2
+    }
+  ],
+  "sourceEquipment": [],
+  "generationContext": {
+    "dimension": "minecraft:overworld",
+    "biome": "minecraft:forest",
+    "position": {
+      "worldId": "world-test",
+      "x": 1,
+      "y": 70,
+      "z": 2
+    },
+    "worldTimeTicks": 14000,
+    "weather": {
+      "worldRain": false,
+      "exposedToRain": null
+    },
+    "nearbyBlocks": {
+      "samplingVersion": "1",
+      "samples": [],
+      "missingReason": "NOT_SAMPLED"
+    }
+  }
+}

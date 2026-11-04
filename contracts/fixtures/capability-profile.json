@@ -1,0 +1,12 @@
+{
+  "profileId": "profile-test",
+  "hostId": "local-paper",
+  "hostBuildId": "s0",
+  "protocolVersion": "1",
+  "engineBuildId": "unavailable-s0",
+  "events": [],
+  "queries": [],
+  "operations": [],
+  "visuals": [],
+  "limits": {}
+}

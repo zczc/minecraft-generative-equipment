@@ -1,0 +1,67 @@
+[
+  {
+    "text": "",
+    "count": 0,
+    "accepted": true
+  },
+  {
+    "text": "让采集留下回声",
+    "count": 7,
+    "accepted": true
+  },
+  {
+    "text": "return the impact",
+    "count": 3,
+    "accepted": true
+  },
+  {
+    "text": "借 echo 的力量",
+    "count": 5,
+    "accepted": true
+  },
+  {
+    "text": "一二三四五六七八九十",
+    "count": 10,
+    "accepted": true
+  },
+  {
+    "text": "一二三四五六七八九十百",
+    "count": 11,
+    "accepted": false
+  },
+  {
+    "text": "don't stop",
+    "count": 2,
+    "accepted": true
+  },
+  {
+    "text": "well-known",
+    "count": 2,
+    "accepted": true
+  },
+  {
+    "text": "12 345",
+    "count": 2,
+    "accepted": true
+  },
+  {
+    "text": "👨‍👩‍👧‍👦 🇨🇳 👍🏽",
+    "count": 3,
+    "accepted": true
+  },
+  {
+    "text": "é",
+    "count": 1,
+    "accepted": true
+  },
+  {
+    "text": "，。！？  \n",
+    "count": 0,
+    "accepted": true
+  },
+  {
+    "text": "hello世界123",
+    "count": 4,
+    "accepted": true
+  }
+]

@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "CueSpec": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "preview",
+            "ongoing",
+            "result",
+            "failure"
+          ]
+        },
+        "audience": {
+          "type": "string",
+          "enum": [
+            "actor",
+            "nearby"
+          ]
+        },
+        "maxDistance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "durationTicks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1200
+        },
+        "recipe": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "renderer": {
+          "const": "render"
+        },
+        "requiredReceiptStatus": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "PROPOSED",
+              "APPLIED",
+              "REJECTED",
+              "ERROR"
+            ]
+          },
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "category",
+        "audience",
+        "durationTicks"
+      ],
+      "additionalProperties": false
+    },
+    "PresentationSpec": {
+      "type": "object",
+      "properties": {
+        "cues": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "$ref": "#/$defs/CueSpec"
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cueId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "trigger": {
+                "type": "string",
+                "enum": [
+                  "activity.phase",
+                  "operation.receipt",
+                  "feedback"
+                ]
+              },
+              "match": {
+                "type": "object",
+                "maxProperties": 128,
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "cueId",
+              "trigger",
+              "match"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "cues",
+        "bindings"
+      ],
+      "additionalProperties": false
+    },
+    "EquipmentSource": {
+      "type": "object",
+      "properties": {
+        "formatVersion": {
+          "const": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "inputRelation": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "baseItem": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+        },
+        "activationSlots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "main_hand",
+              "off_hand",
+              "head",
+              "chest",
+              "legs",
+              "feet"
+            ]
+          },
+          "maxItems": 6
+        },
+        "stateSchema": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "initialState": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "parameters": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "subscriptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "requires": {
+          "type": "object",
+          "properties": {
+            "queries": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "maxItems": 128
+            },
+            "operations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "maxItems": 128
+            }
+          },
+          "required": [
+            "queries",
+            "operations"
+          ],
+          "additionalProperties": false
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "handler": {
+                "const": "onEvent"
+              },
+              "scenarioIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "maxItems": 128
+              }
+            },
+            "required": [
+              "id",
+              "text",
+              "handler",
+              "scenarioIds"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 32
+        },
+        "presentation": {
+          "$ref": "#/$defs/PresentationSpec"
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "maxProperties": 128,
+            "additionalProperties": true
+          },
+          "maxItems": 16
+        }
+      },
+      "required": [
+        "formatVersion",
+        "name",
+        "description",
+        "baseItem",
+        "activationSlots",
+        "stateSchema",
+        "initialState",
+        "parameters",
+        "subscriptions",
+        "requires"
+      ],
+      "additionalProperties": false
+    },
+    "GeneratedSource": {
+      "type": "object",
+      "properties": {
+        "equipment": {
+          "$ref": "#/$defs/EquipmentSource"
+        },
+        "behaviorSource": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 131072
+        }
+      },
+      "required": [
+        "equipment",
+        "behaviorSource"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

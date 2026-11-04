@@ -1,0 +1,1845 @@
+{
+  "definitions": {
+    "DefinitionRef": {
+      "type": "object",
+      "properties": {
+        "definitionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "definitionId",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "WorldRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "WorldPosition": {
+      "type": "object",
+      "properties": {
+        "worldId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "worldId",
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "Vec3": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "ApiError": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "details": {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "requestId",
+        "error"
+      ],
+      "additionalProperties": false
+    },
+    "GenerationContext": {
+      "type": "object",
+      "properties": {
+        "dimension": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+        },
+        "biome": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/WorldPosition"
+        },
+        "worldTimeTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "weather": {
+          "type": "object",
+          "properties": {
+            "worldRain": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "exposedToRain": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "worldRain",
+            "exposedToRain"
+          ],
+          "additionalProperties": false
+        },
+        "nearbyBlocks": {
+          "type": "object",
+          "properties": {
+            "samplingVersion": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "samples": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "blockId": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "blockId",
+                  "count"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 64
+            },
+            "missingReason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "samplingVersion",
+            "samples",
+            "missingReason"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "dimension",
+        "biome",
+        "position",
+        "worldTimeTicks",
+        "weather",
+        "nearbyBlocks"
+      ],
+      "additionalProperties": false
+    },
+    "CapabilityProfile": {
+      "type": "object",
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "hostId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "hostBuildId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "protocolVersion": {
+          "const": "1"
+        },
+        "engineBuildId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "queries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "visuals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "limits": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "profileId",
+        "hostId",
+        "hostBuildId",
+        "protocolVersion",
+        "engineBuildId",
+        "events",
+        "queries",
+        "operations",
+        "visuals",
+        "limits"
+      ],
+      "additionalProperties": false
+    },
+    "CueSpec": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "preview",
+            "ongoing",
+            "result",
+            "failure"
+          ]
+        },
+        "audience": {
+          "type": "string",
+          "enum": [
+            "actor",
+            "nearby"
+          ]
+        },
+        "maxDistance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "durationTicks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1200
+        },
+        "recipe": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "renderer": {
+          "const": "render"
+        },
+        "requiredReceiptStatus": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "PROPOSED",
+              "APPLIED",
+              "REJECTED",
+              "ERROR"
+            ]
+          },
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "category",
+        "audience",
+        "durationTicks"
+      ],
+      "additionalProperties": false
+    },
+    "PresentationSpec": {
+      "type": "object",
+      "properties": {
+        "cues": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "$ref": "#/$defs/CueSpec"
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cueId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "trigger": {
+                "type": "string",
+                "enum": [
+                  "activity.phase",
+                  "operation.receipt",
+                  "feedback"
+                ]
+              },
+              "match": {
+                "type": "object",
+                "maxProperties": 128,
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "cueId",
+              "trigger",
+              "match"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "cues",
+        "bindings"
+      ],
+      "additionalProperties": false
+    },
+    "EquipmentSource": {
+      "type": "object",
+      "properties": {
+        "formatVersion": {
+          "const": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "inputRelation": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "baseItem": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+        },
+        "activationSlots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "main_hand",
+              "off_hand",
+              "head",
+              "chest",
+              "legs",
+              "feet"
+            ]
+          },
+          "maxItems": 6
+        },
+        "stateSchema": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "initialState": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "parameters": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "subscriptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "requires": {
+          "type": "object",
+          "properties": {
+            "queries": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "maxItems": 128
+            },
+            "operations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "maxItems": 128
+            }
+          },
+          "required": [
+            "queries",
+            "operations"
+          ],
+          "additionalProperties": false
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "handler": {
+                "const": "onEvent"
+              },
+              "scenarioIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "maxItems": 128
+              }
+            },
+            "required": [
+              "id",
+              "text",
+              "handler",
+              "scenarioIds"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 32
+        },
+        "presentation": {
+          "$ref": "#/$defs/PresentationSpec"
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "maxProperties": 128,
+            "additionalProperties": true
+          },
+          "maxItems": 16
+        }
+      },
+      "required": [
+        "formatVersion",
+        "name",
+        "description",
+        "baseItem",
+        "activationSlots",
+        "stateSchema",
+        "initialState",
+        "parameters",
+        "subscriptions",
+        "requires"
+      ],
+      "additionalProperties": false
+    },
+    "GeneratedSource": {
+      "type": "object",
+      "properties": {
+        "equipment": {
+          "$ref": "#/$defs/EquipmentSource"
+        },
+        "behaviorSource": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 131072
+        }
+      },
+      "required": [
+        "equipment",
+        "behaviorSource"
+      ],
+      "additionalProperties": false
+    },
+    "MaterialInput": {
+      "type": "object",
+      "properties": {
+        "definitionId": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        }
+      },
+      "required": [
+        "definitionId",
+        "count"
+      ],
+      "additionalProperties": false
+    },
+    "SourceEquipment": {
+      "type": "object",
+      "properties": {
+        "definitionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bundleHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "state": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "definitionId",
+        "version",
+        "bundleHash",
+        "state"
+      ],
+      "additionalProperties": false
+    },
+    "GenerationRequest": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "taskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "hostId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "recipientPlayerId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "worldRuleRef": {
+          "$ref": "#/$defs/WorldRef"
+        },
+        "capabilityProfileId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "intentText": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MaterialInput"
+          },
+          "maxItems": 8
+        },
+        "sourceEquipment": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SourceEquipment"
+          },
+          "maxItems": 4
+        },
+        "generationContext": {
+          "$ref": "#/$defs/GenerationContext"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "taskId",
+        "hostId",
+        "recipientPlayerId",
+        "worldRuleRef",
+        "capabilityProfileId",
+        "intentText",
+        "materials",
+        "sourceEquipment",
+        "generationContext"
+      ],
+      "additionalProperties": false
+    },
+    "GenerationView": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "taskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "QUEUED",
+            "GENERATING",
+            "VALIDATING",
+            "REPAIRING",
+            "READY",
+            "FAILED",
+            "CANCELLED"
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "inputHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "definitionRef": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DefinitionRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "taskId",
+        "status",
+        "revision",
+        "inputHash",
+        "definitionRef",
+        "error",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    },
+    "CancelRequest": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "requestId",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "DeliveryEvent": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "deliveryId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "hostId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "taskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "sequenceNo": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "NOT_STARTED",
+            "WAITING_PLAYER",
+            "PREPARED",
+            "APPLIED",
+            "ACKNOWLEDGED",
+            "RECOVERY_REQUIRED",
+            "REFUNDED"
+          ]
+        },
+        "evidence": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "eventId",
+        "deliveryId",
+        "hostId",
+        "taskId",
+        "sequenceNo",
+        "state",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "Observation": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "definitionRef": {
+          "$ref": "#/$defs/DefinitionRef"
+        },
+        "codeHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "activationId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "activityId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "payload": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "eventId",
+        "definitionRef",
+        "codeHash",
+        "activationId",
+        "activityId",
+        "kind",
+        "payload",
+        "observedAt"
+      ],
+      "additionalProperties": false
+    },
+    "ObservationBatch": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Observation"
+      },
+      "maxItems": 100
+    },
+    "PackageManifest": {
+      "type": "object",
+      "properties": {
+        "packageFormatVersion": {
+          "const": 1
+        },
+        "definitionRef": {
+          "$ref": "#/$defs/DefinitionRef"
+        },
+        "protocolVersion": {
+          "const": "1"
+        },
+        "capabilityProfileId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "engineBuildId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "worldRuleRef": {
+          "$ref": "#/$defs/WorldRef"
+        },
+        "sourceHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "path",
+              "sha256",
+              "bytes"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 32
+        },
+        "subscriptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 128
+        },
+        "activationSlots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 6
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "model",
+            "fixture"
+          ]
+        }
+      },
+      "required": [
+        "packageFormatVersion",
+        "definitionRef",
+        "protocolVersion",
+        "capabilityProfileId",
+        "engineBuildId",
+        "worldRuleRef",
+        "sourceHash",
+        "files",
+        "subscriptions",
+        "requiredCapabilities",
+        "activationSlots",
+        "origin"
+      ],
+      "additionalProperties": false
+    },
+    "RuleEvent": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "kind": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "tick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "phase": {
+          "type": "string",
+          "enum": [
+            "prepare",
+            "observed",
+            "internal"
+          ]
+        },
+        "payload": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "eventId",
+        "kind",
+        "tick",
+        "phase",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "OperationRequest": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "capability": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "args": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "activityKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        }
+      },
+      "required": [
+        "key",
+        "capability",
+        "args"
+      ],
+      "additionalProperties": false
+    },
+    "OperationReceipt": {
+      "type": "object",
+      "properties": {
+        "receiptId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "requestKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "capability": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PROPOSED",
+            "APPLIED",
+            "REJECTED",
+            "ERROR"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "data": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "observedTick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "receiptId",
+        "requestKey",
+        "capability",
+        "status",
+        "code",
+        "data",
+        "observedTick"
+      ],
+      "additionalProperties": false
+    },
+    "ActivityChange": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "begin"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "phase": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "data": {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "action",
+            "key",
+            "phase",
+            "data"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "update"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "phase": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "data": {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "action",
+            "key"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "end"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          "required": [
+            "action",
+            "key",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TimerCommand": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "set"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "afterTicks": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "activityKey": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "payload": {
+              "type": "object",
+              "maxProperties": 128,
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "action",
+            "key",
+            "afterTicks",
+            "payload"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "const": "cancel"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            }
+          },
+          "required": [
+            "action",
+            "key"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "FeedbackSignal": {
+      "type": "object",
+      "properties": {
+        "cueId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "activityKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "data": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "receiptIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "cueId"
+      ],
+      "additionalProperties": false
+    },
+    "Decision": {
+      "type": "object",
+      "properties": {
+        "nextState": {
+          "type": "object",
+          "maxProperties": 128,
+          "additionalProperties": true
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ActivityChange"
+          },
+          "maxItems": 32
+        },
+        "timers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TimerCommand"
+          },
+          "maxItems": 16
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperationRequest"
+          },
+          "maxItems": 32
+        },
+        "feedback": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FeedbackSignal"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "ActivitySnapshot": {
+      "type": "object",
+      "properties": {
+        "activityId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "phase": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "elapsedTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "phaseElapsedTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true,
+          "maxProperties": 128
+        }
+      },
+      "required": [
+        "activityId",
+        "key",
+        "phase",
+        "elapsedTicks",
+        "phaseElapsedTicks",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "RenderFrame": {
+      "type": "object",
+      "properties": {
+        "cueId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "activity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ActivitySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "elapsedTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "progress": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "anchors": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "$ref": "#/$defs/WorldPosition"
+          }
+        },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperationReceipt"
+          },
+          "maxItems": 32
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true,
+          "maxProperties": 128
+        }
+      },
+      "required": [
+        "cueId",
+        "activity",
+        "elapsedTicks",
+        "progress",
+        "anchors",
+        "receipts",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "VisualPrimitive": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "particle"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "particleKey": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/WorldPosition"
+              },
+              "maxItems": 256
+            },
+            "countPerPoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "options": {
+              "type": "object",
+              "additionalProperties": true,
+              "maxProperties": 128
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "particleKey",
+            "points",
+            "countPerPoint"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "sound"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "soundKey": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "position": {
+              "$ref": "#/$defs/WorldPosition"
+            },
+            "pitch": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "volume": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 4
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "soundKey",
+            "position",
+            "pitch",
+            "volume"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "display"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "resource": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "item",
+                    "block"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "position": {
+              "$ref": "#/$defs/WorldPosition"
+            },
+            "scale": {
+              "$ref": "#/$defs/Vec3"
+            },
+            "rotation": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "z": {
+                  "type": "number"
+                },
+                "w": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "z",
+                "w"
+              ],
+              "additionalProperties": false
+            },
+            "ttlTicks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1200
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "resource",
+            "position",
+            "scale",
+            "rotation",
+            "ttlTicks"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "channel": {
+              "const": "actionbar"
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "ttlTicks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1200
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "channel",
+            "text",
+            "ttlTicks"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "text"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "channel": {
+              "const": "floating"
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "position": {
+              "$ref": "#/$defs/WorldPosition"
+            },
+            "ttlTicks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1200
+            }
+          },
+          "required": [
+            "kind",
+            "key",
+            "channel",
+            "text",
+            "position",
+            "ttlTicks"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "VisualFrame": {
+      "type": "object",
+      "properties": {
+        "primitives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VisualPrimitive"
+          },
+          "maxItems": 256
+        }
+      },
+      "required": [
+        "primitives"
+      ],
+      "additionalProperties": false
+    },
+    "WorldConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "materialsFile": {
+          "const": "materials.json"
+        },
+        "policyFile": {
+          "const": "generation-policy.json"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "name",
+        "description",
+        "materialsFile",
+        "policyFile"
+      ],
+      "additionalProperties": false
+    },
+    "MaterialDefinition": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_./-]+$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "gameFacts": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "associations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "maxItems": 12
+        }
+      },
+      "required": [
+        "itemId",
+        "enabled",
+        "name",
+        "gameFacts",
+        "associations"
+      ],
+      "additionalProperties": false
+    },
+    "MaterialCatalog": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MaterialDefinition"
+          },
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "version",
+        "materials"
+      ],
+      "additionalProperties": false
+    },
+    "GenerationPolicy": {
+      "type": "object",
+      "properties": {
+        "intentLimit": {
+          "const": 10
+        },
+        "maxIntentBytes": {
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 4096
+        },
+        "maxMaterialKinds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "maxCountPerMaterial": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "associationsAreSuggestions": {
+          "const": true
+        },
+        "repairLimit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        }
+      },
+      "required": [
+        "intentLimit",
+        "maxIntentBytes",
+        "maxMaterialKinds",
+        "maxCountPerMaterial",
+        "associationsAreSuggestions",
+        "repairLimit"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

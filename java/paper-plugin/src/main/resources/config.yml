@@ -1,0 +1,12 @@
+host-id: local-paper
+generator:
+  base-url: http://127.0.0.1:8765
+  token-env: GE_INTERNAL_TOKEN
+runtime:
+  enabled: false
+  memory-bytes: 8388608
+  state-bytes: 32768
+  max-operations: 32
+  max-timers: 16
+  handler-target-ms: 1
+  tick-target-ms: 5

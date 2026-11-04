@@ -1,0 +1,80 @@
+[
+  {
+    "method": "get",
+    "path": "/health/live",
+    "body": null,
+    "summary": "Public liveness"
+  },
+  {
+    "method": "get",
+    "path": "/v1/health/ready",
+    "body": null,
+    "summary": "Dependency readiness; S0 returns 503"
+  },
+  {
+    "method": "post",
+    "path": "/v1/hosts/{hostId}/capability-profiles",
+    "body": "CapabilityProfile",
+    "summary": "Register immutable host capabilities"
+  },
+  {
+    "method": "get",
+    "path": "/v1/worlds/{worldId}/materials",
+    "body": null,
+    "summary": "Read enabled materials and input policy"
+  },
+  {
+    "method": "post",
+    "path": "/v1/generations",
+    "body": "GenerationRequest",
+    "summary": "Persist a generation task; S0 worker fails with NOT_IMPLEMENTED"
+  },
+  {
+    "method": "get",
+    "path": "/v1/generations/{taskId}",
+    "body": null,
+    "summary": "Get a generation task"
+  },
+  {
+    "method": "post",
+    "path": "/v1/generations/{taskId}/cancel",
+    "body": "CancelRequest",
+    "summary": "Cancel a nonterminal task"
+  },
+  {
+    "method": "get",
+    "path": "/v1/definitions/{id}/versions/{version}",
+    "body": null,
+    "summary": "Get a verified definition; none published in S0"
+  },
+  {
+    "method": "get",
+    "path": "/v1/definitions/{id}/versions/{version}/bundle",
+    "body": null,
+    "summary": "Download verified bundle; unavailable in S0"
+  },
+  {
+    "method": "get",
+    "path": "/v1/definitions/{id}/versions/{version}/provenance",
+    "body": null,
+    "summary": "Get immutable provenance; unavailable in S0"
+  },
+  {
+    "method": "post",
+    "path": "/v1/generations/{taskId}/delivery-events",
+    "body": "DeliveryEvent",
+    "summary": "Delivery port; S0 returns NOT_IMPLEMENTED"
+  },
+  {
+    "method": "post",
+    "path": "/v1/observations/batch",
+    "body": "ObservationBatch",
+    "summary": "Observation port; S0 returns NOT_IMPLEMENTED"
+  },
+  {
+    "method": "get",
+    "path": "/v1/observations",
+    "body": null,
+    "summary": "Query observations; S0 returns NOT_IMPLEMENTED"
+  }
+]

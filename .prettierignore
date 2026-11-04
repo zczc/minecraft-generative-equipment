@@ -1,0 +1,9 @@
+node_modules/
+var/
+**/dist/
+**/build/
+packages/protocol/src/generated/
+packages/protocol/src/types.ts
+java/protocol/src/main/java/dev/generative/equipment/protocol/Contracts.java
+java/protocol/src/main/resources/contracts/schemas.json
+pnpm-lock.yaml

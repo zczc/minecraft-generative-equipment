@@ -1,0 +1,34 @@
+{
+  "name": "minecraft-generative-equipment",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "contracts:generate": "node scripts/generate-contracts.mjs",
+    "contracts:check": "node scripts/generate-contracts.mjs --check",
+    "build:ts": "pnpm -r --sort build",
+    "build:java": "node scripts/java.mjs build",
+    "build": "pnpm contracts:check && pnpm build:ts && pnpm build:java",
+    "test:contracts": "pnpm build:ts && node --import tsx --test tests/contracts/*.test.ts",
+    "test:integration": "pnpm build:ts && node --import tsx --test tests/integration/*.test.ts",
+    "test:java": "node scripts/java.mjs test",
+    "test": "pnpm contracts:check && pnpm test:contracts && pnpm test:integration && pnpm test:java",
+    "dev:generator": "pnpm build:ts && node --env-file-if-exists=.env services/generator/dist/main.js",
+    "dev:paper": "node --env-file-if-exists=.env scripts/paper.mjs",
+    "check:design": "node scripts/check-design.mjs",
+    "format:check": "prettier --check \"packages/*/src/*.ts\" \"services/generator/src/**/*.ts\" \"tests/**/*.ts\" \"scripts/*.mjs\""
+  },
+  "devDependencies": {
+    "@ge/protocol": "workspace:*",
+    "@types/node": "24.10.0",
+    "json-schema-to-typescript": "15.0.4",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "yaml": "2.8.1"
+  }
+}
