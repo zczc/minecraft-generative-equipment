@@ -4,7 +4,8 @@ generator:
   token-env: GE_INTERNAL_TOKEN
 runtime:
   enabled: true
-  # 执行上限由 contracts/capabilities/v1/host.json 固定并公布，避免配置与实际权限不一致。
+  # 实际执行预算由 contracts/capabilities/v1/host.json 固定并公布：
+  # 每刻调度目标 5ms，单次硬上限 20ms，每刻总硬上限 25ms。旧 handler-target-ms 等键不生效。
 
 world-rule-id: mist-isle
 generation:

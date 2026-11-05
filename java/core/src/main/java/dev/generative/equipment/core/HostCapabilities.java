@@ -32,7 +32,7 @@ public final class HostCapabilities {
     var p =
         MAPPER
             .createObjectNode()
-            .put("profileId", "paper-alpha1-" + host)
+            .put("profileId", DOCUMENT.path("buildId").asText() + "-" + host)
             .put("hostId", host)
             .put("hostBuildId", DOCUMENT.path("buildId").asText())
             .put("protocolVersion", "1")
@@ -40,6 +40,13 @@ public final class HostCapabilities {
     for (String key : List.of("events", "queries", "operations", "visuals", "limits"))
       p.set(key, DOCUMENT.path(key).deepCopy());
     return p;
+  }
+
+  /** alpha2 只调整运行预算；允许同一宿主继续加载 alpha1 装备。 包散列、原验证报告、引擎和每条实际能力仍由加载器校验，不接受其他宿主或未知版本。 */
+  public static boolean acceptsProfile(JsonNode current, String sourceProfile) {
+    return current.path("profileId").asText().equals(sourceProfile)
+        || (current.path("hostBuildId").asText().equals("paper-alpha2")
+            && sourceProfile.equals("paper-alpha1-" + current.path("hostId").asText()));
   }
 
   public static void equipment(JsonNode e, JsonNode profile) {

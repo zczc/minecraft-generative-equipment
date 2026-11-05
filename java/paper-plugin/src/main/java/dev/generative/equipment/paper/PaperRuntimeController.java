@@ -26,6 +26,13 @@ public final class PaperRuntimeController implements Listener, AutoCloseable {
   private final Set<String> disabled = new HashSet<>();
   private final Map<UUID, Session> sessions = new HashMap<>();
   private final Set<UUID> suspended = new HashSet<>();
+  // 5 毫秒是停止接纳下一项工作的目标；已接纳的调用仍受单次和本刻总硬上限约束。
+  private final long tickTargetNanos =
+      HostCapabilities.DOCUMENT.path("limits").path("tickTargetMs").asLong() * 1_000_000;
+  private final long tickBudgetNanos =
+      HostCapabilities.DOCUMENT.path("limits").path("tickBudgetMs").asLong() * 1_000_000;
+  private final long handlerBudgetNanos =
+      HostCapabilities.DOCUMENT.path("limits").path("handlerBudgetMs").asLong() * 1_000_000;
   private long tick, usedNanos;
   private boolean enabled;
   private java.util.function.Consumer<JsonNode> observations = event -> {};
@@ -128,8 +135,11 @@ public final class PaperRuntimeController implements Listener, AutoCloseable {
       stop(id);
       s = null;
     }
-    if (!enabled || s != null || usedNanos >= 4_000_000 || p.isDead() || suspended.contains(id))
-      return;
+    if (!enabled
+        || s != null
+        || usedNanos >= tickTargetNanos
+        || p.isDead()
+        || suspended.contains(id)) return;
     var item = p.getInventory().getItemInMainHand();
     if (!PdcItemStateAdapter.generated(item) || item.getAmount() != 1) return;
     String key = PdcItemStateAdapter.reference(item);
@@ -183,24 +193,31 @@ public final class PaperRuntimeController implements Listener, AutoCloseable {
   }
 
   private void dispatch(Session s, String kind, String phase, JsonNode payload) {
-    if (usedNanos >= 5_000_000) return;
+    if (usedNanos >= tickTargetNanos) return;
     long start = System.nanoTime();
-    s.engine.budgetNanos(5_000_000 - usedNanos);
+    s.engine.budgetNanos(Math.min(handlerBudgetNanos, tickBudgetNanos - usedNanos));
     try {
       s.engine.onEvent(
           s.lease,
           new Contracts.RuleEvent(UUID.randomUUID().toString(), kind, tick, phase, payload));
     } catch (Exception e) {
-      disable(s.lease.definition().definitionId(), s.lease.definition().version());
-      var p = Bukkit.getPlayer(s.lease.playerId());
-      if (p != null) p.sendMessage("这件装备运行失败，已停止能力并保留物品状态。管理员可查看日志。");
-      plugin
-          .getLogger()
-          .warning(
-              "Rule disabled: " + s.lease.definition() + " (" + e.getClass().getSimpleName() + ")");
+      fail(s, kind, e);
     } finally {
       usedNanos += System.nanoTime() - start;
     }
+  }
+
+  /** 事件与计时器统一记录故障；保留堆栈和事件类型，避免只显示“失败”却无法定位。 */
+  private void fail(Session s, String kind, Exception error) {
+    disable(s.lease.definition().definitionId(), s.lease.definition().version());
+    var player = Bukkit.getPlayer(s.lease.playerId());
+    if (player != null) player.sendMessage("这件装备运行失败，已停止能力并保留物品状态。管理员可查看日志。");
+    plugin
+        .getLogger()
+        .log(
+            java.util.logging.Level.WARNING,
+            "Rule disabled: " + s.lease.definition() + " event=" + kind + " tick=" + tick,
+            error);
   }
 
   /** 一刻总预算包含全部玩家；达到预算后跳过非即时更新，不让每件装备各拿一份无限预算。 */
@@ -217,15 +234,16 @@ public final class PaperRuntimeController implements Listener, AutoCloseable {
       }
       s.world.tick(tick);
       s.presentation.tick(tick);
-      if (usedNanos >= 5_000_000) continue;
+      if (usedNanos >= tickTargetNanos) continue;
       long start = System.nanoTime();
-      s.engine.budgetNanos(5_000_000 - usedNanos);
+      s.engine.budgetNanos(Math.min(handlerBudgetNanos, tickBudgetNanos - usedNanos));
       try {
         s.engine.advance(tick);
       } catch (Exception e) {
-        disable(s.lease.definition().definitionId(), s.lease.definition().version());
+        fail(s, "timer.fired", e);
       }
       usedNanos += System.nanoTime() - start;
+      if (!active(s.lease)) continue;
       var player = Bukkit.getPlayer(s.lease.playerId());
       if (player == null) continue;
       if (tick % 2 == 0 && s.previous.distanceSquared(player.getLocation()) > .0001) {
@@ -235,9 +253,9 @@ public final class PaperRuntimeController implements Listener, AutoCloseable {
         s.previous = player.getLocation();
         dispatch(s, "actor.move.sampled", "observed", move);
       }
-      if (usedNanos < 5_000_000) {
+      if (usedNanos < tickTargetNanos) {
         start = System.nanoTime();
-        s.presentation.render(tick, start + 5_000_000 - usedNanos);
+        s.presentation.render(tick, start + tickTargetNanos - usedNanos);
         usedNanos += System.nanoTime() - start;
       }
     }

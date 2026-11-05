@@ -73,7 +73,7 @@ public final class PackageLoader {
         || !manifest.path("definitionRef").equals(view.path("definitionRef")))
       throw new IllegalArgumentException("Manifest changed");
     if (!manifest.path("engineBuildId").equals(profile.path("engineBuildId"))
-        || !manifest.path("capabilityProfileId").equals(profile.path("profileId")))
+        || !HostCapabilities.acceptsProfile(profile, manifest.path("capabilityProfileId").asText()))
       throw new IllegalArgumentException("Host capability or engine mismatch");
     Set<String> declared = new HashSet<>();
     for (var f : manifest.path("files")) {

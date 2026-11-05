@@ -1,11 +1,11 @@
 {
-  "buildId":"paper-alpha1",
+  "buildId":"paper-alpha2",
   "events":["item.activated","item.used","actor.move.sampled","combat.damage.prepare","timer.fired","operation.results"],
   "queries":["actor.status","entity.nearby","view.raycast","world.block"],
   "operations":["entity.velocity.add","combat.damage.set","entity.damage.request"],
   "visuals":["particle","sound","text","display"],
   "activationSlots":["main_hand"],
-  "limits":{"memoryBytes":8388608,"stateBytes":32768,"maxOperations":32,"maxQueries":16,"maxTimers":16,"maxActivities":16,"handlerBudgetMs":5,"tickBudgetMs":5,"radius":16,"pvp":false},
+  "limits":{"memoryBytes":8388608,"stateBytes":32768,"maxOperations":32,"maxQueries":16,"maxTimers":16,"maxActivities":16,"handlerBudgetMs":20,"tickBudgetMs":25,"tickTargetMs":5,"radius":16,"pvp":false},
   "api":{
     "ctx.self":"{ref:'self',position:{worldId,x,y,z},health,sneaking,onGround,velocity:{x,y,z}}",
     "ctx.query":"returns {ok,data,code}; refs returned by queries belong to this activation. No UUID strings as target.",

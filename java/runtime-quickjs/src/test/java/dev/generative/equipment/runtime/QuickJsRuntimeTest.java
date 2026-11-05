@@ -38,6 +38,18 @@ class QuickJsRuntimeTest {
     return new ExecutionBudget(8 * 1024 * 1024, System.nanoTime() + ms * 1000000, 32, 8);
   }
 
+  /** 启动预热必须走得通；防止模拟决策不符合真实契约，导致服务器启动后无法加载装备。 */
+  @Test
+  void fullHostWarmupUsesValidDecisionsAndKeepsRuntimeUsable() throws Exception {
+    try (var runtime = new QuickJsRuntime()) {
+      assertDoesNotThrow(() -> RuntimeWarmup.run(runtime));
+      var definition = compile(runtime, "export function onEvent(){return {}}");
+      assertInstanceOf(
+          InvocationSuccess.class,
+          runtime.invoke(definition, input(), (n, a, l) -> null, budget(1000)));
+    }
+  }
+
   @Test
   void runsRealCodeAndResetsGlobals() {
     try (var runtime = new QuickJsRuntime()) {
